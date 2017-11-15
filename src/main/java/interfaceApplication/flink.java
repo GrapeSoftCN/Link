@@ -7,6 +7,7 @@ import org.json.simple.JSONObject;
 import JGrapeSystem.rMsg;
 import Model.CommonModel;
 import apps.appsProxy;
+import authority.plvDef.plvType;
 import check.checkHelper;
 import interfaceModel.GrapeDBSpecField;
 import interfaceModel.GrapeTreeDBModel;
@@ -26,6 +27,7 @@ public class flink {
 		gDbSpecField.importDescription(appsProxy.tableConfig("flink"));
 		flink.descriptionModel(gDbSpecField);
 		flink.bindApp();
+		flink.enableCheck();//开启权限检查
 	}
 
 	/**
@@ -70,8 +72,14 @@ public class flink {
 			return info;
 		}
 		JSONObject object = JSONObject.toJSON(info);
+		JSONObject rMode = new JSONObject(plvType.chkType, plvType.powerVal).puts(plvType.chkVal, 100);//设置默认查询权限
+    	JSONObject uMode = new JSONObject(plvType.chkType, plvType.powerVal).puts(plvType.chkVal, 200);
+    	JSONObject dMode = new JSONObject(plvType.chkType, plvType.powerVal).puts(plvType.chkVal, 300);
+    	object.put("rMode", rMode.toJSONString()); //添加默认查看权限
+    	object.put("uMode", uMode.toJSONString()); //添加默认修改权限
+    	object.put("dMode", dMode.toJSONString()); //添加默认删除权限
 		if (object != null && object.size() > 0) {
-			temp = flink.data(object).insertOnce();
+			temp = flink.data(object).insertEx();
 			obj = (temp != null) ? find(temp.toString()) : new JSONObject();
 			result = rMsg.netMSG(0, obj);
 		}
@@ -86,15 +94,15 @@ public class flink {
 	 * @return
 	 */
 	public String UpdateFlink(String mid, String msgInfo) {
-		int code = 99;
+		boolean objects =false;
 		String result = rMsg.netMSG(100, "友情链接修改失败");
 		if (!StringHelper.InvaildString(msgInfo) && !StringHelper.InvaildString(mid) && ObjectId.isValid(mid)) {
 			JSONObject object = JSONObject.toJSON(msgInfo);
 			if (object != null && object.size() > 0) {
-				code = flink.eq("_id", mid).data(object).update() != null ? 0 : 99;
+				objects = flink.eq("_id", mid).data(object).updateEx();
 			}
 		}
-		result = code == 0 ? rMsg.netMSG(0, "友情链接修改成功") : result;
+		result = objects ? rMsg.netMSG(0, "友情链接修改成功") : result;
 		return result;
 	}
 
