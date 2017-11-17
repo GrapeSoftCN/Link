@@ -11,6 +11,7 @@ import authority.plvDef.plvType;
 import check.checkHelper;
 import interfaceModel.GrapeDBSpecField;
 import interfaceModel.GrapeTreeDBModel;
+import nlogger.nlogger;
 import security.codec;
 import string.StringHelper;
 
@@ -27,7 +28,7 @@ public class flink {
 		gDbSpecField.importDescription(appsProxy.tableConfig("flink"));
 		flink.descriptionModel(gDbSpecField);
 		flink.bindApp();
-		flink.enableCheck();//开启权限检查
+//		flink.enableCheck();//开启权限检查
 	}
 
 	/**
@@ -63,9 +64,13 @@ public class flink {
 	 * @param info
 	 * @return
 	 */
-	public String flinkAdd(String info) {
+	@SuppressWarnings("unchecked")
+    public String flinkAdd(String info) {
 		Object temp;
 		info = checkParam(info);
+		if (!StringHelper.InvaildString(info)) {
+            return rMsg.netMSG(1, "非法参数");
+        }
 		JSONObject obj = null;
 		String result = rMsg.netMSG(100, "友情链接新增失败");
 		if (info.contains("errorcode")) {
@@ -79,7 +84,7 @@ public class flink {
     	object.put("uMode", uMode.toJSONString()); //添加默认修改权限
     	object.put("dMode", dMode.toJSONString()); //添加默认删除权限
 		if (object != null && object.size() > 0) {
-			temp = flink.data(object).insertEx();
+			temp = flink.data(object).insertOnce();
 			obj = (temp != null) ? find(temp.toString()) : new JSONObject();
 			result = rMsg.netMSG(0, obj);
 		}
@@ -96,7 +101,7 @@ public class flink {
 	public String UpdateFlink(String mid, String msgInfo) {
 		boolean objects =false;
 		String result = rMsg.netMSG(100, "友情链接修改失败");
-		if (!StringHelper.InvaildString(msgInfo) && !StringHelper.InvaildString(mid) && ObjectId.isValid(mid)) {
+		if (StringHelper.InvaildString(msgInfo) && StringHelper.InvaildString(mid) && ObjectId.isValid(mid)) {
 			JSONObject object = JSONObject.toJSON(msgInfo);
 			if (object != null && object.size() > 0) {
 				objects = flink.eq("_id", mid).data(object).updateEx();
@@ -126,7 +131,7 @@ public class flink {
 		long code = 0;
 		String[] value = null;
 		String result = rMsg.netMSG(100, "友情链接删除失败");
-		if (!StringHelper.InvaildString(mids)) {
+		if (StringHelper.InvaildString(mids)) {
 			value = mids.split(",");
 		}
 		if (value != null) {
@@ -179,7 +184,7 @@ public class flink {
 	public String PageByFlink(int idx, int pageSize, String msgInfo) {
 		long total = 0;
 		JSONArray array = null;
-		if (!StringHelper.InvaildString(msgInfo)) {
+		if (StringHelper.InvaildString(msgInfo)) {
 			JSONArray condArray = model.buildCond(msgInfo);
 			if (condArray != null && condArray.size() > 0) {
 				flink.where(condArray);
@@ -210,7 +215,12 @@ public class flink {
 	 */
 	private JSONObject find(String linkid) {
 		JSONObject object = null;
-		object = flink.eq("_id", linkid).find();
+		try {
+		    object = flink.eq("_id", linkid).find();
+        } catch (Exception e) {
+            nlogger.logout(e);
+            object = null;
+        }
 		return (object != null && object.size() > 0) ? object : new JSONObject();
 	}
 }
