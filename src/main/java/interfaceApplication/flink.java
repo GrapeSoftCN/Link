@@ -4,16 +4,17 @@ import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import JGrapeSystem.rMsg;
 import Model.CommonModel;
-import apps.appsProxy;
-import authority.plvDef.plvType;
-import check.checkHelper;
-import interfaceModel.GrapeDBSpecField;
-import interfaceModel.GrapeTreeDBModel;
-import nlogger.nlogger;
-import security.codec;
-import string.StringHelper;
+import common.java.JGrapeSystem.rMsg;
+import common.java.apps.appsProxy;
+import common.java.authority.plvDef.plvType;
+import common.java.check.checkHelper;
+import common.java.database.dbFilter;
+import common.java.interfaceModel.GrapeDBSpecField;
+import common.java.interfaceModel.GrapeTreeDBModel;
+import common.java.nlogger.nlogger;
+import common.java.security.codec;
+import common.java.string.StringHelper;
 
 public class flink {
     private GrapeTreeDBModel flink;
@@ -128,21 +129,23 @@ public class flink {
      */
     public String DeleteBatchFlink(String mids) {
         long code = 0;
+        dbFilter filter = new dbFilter();
         String[] value = null;
         String result = rMsg.netMSG(100, "友情链接删除失败");
         if (StringHelper.InvaildString(mids)) {
             value = mids.split(",");
         }
         if (value != null) {
-            flink.or();
             for (String id : value) {
-                if (ObjectId.isValid(id)) {
-                    flink.eq("_id", id);
+                if (StringHelper.InvaildString(id)) {
+                    if (ObjectId.isValid(id) || checkHelper.isInt(id)) {
+                        filter.eq("_id", id);
+                    }
                 }
             }
-            JSONArray condArray = JSONArray.toJSONArray(flink.condString());
+            JSONArray condArray = filter.build();
             if (condArray != null && condArray.size() > 0) {
-                code = flink.deleteAll();
+                code = flink.or().where(condArray).deleteAll();
                 result = code >= 0 ? rMsg.netMSG(0, "友情链接删除成功") : result;
             }
         }

@@ -3,7 +3,8 @@ package Model;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import database.dbFilter;
+import common.java.database.dbFilter;
+
 
 public class CommonModel {
     /**
